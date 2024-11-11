@@ -17,6 +17,20 @@ services:
       retries: 3
     networks:
       - backend
+    
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      - PGADMIN_LISTEN_PORT=5555
+    env_file:
+      - ../.env
+    ports:
+      - 5555:5555
+    networks:
+      - backend
+    depends_on:
+      - db
 
   minio:
     image: quay.io/minio/minio
@@ -67,7 +81,7 @@ services:
       - ../.env
       - ../secrets.env
     healthcheck:
-      test: ["CMD", "python healthcheck.py"]
+      test: ["CMD", "curl", "-f", "${BACKEND_URL}/health"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -76,20 +90,6 @@ services:
       - minio
     networks:
       - backend
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    environment:
-      - PGADMIN_LISTEN_PORT=5555
-    env_file:
-      - ../.env
-    ports:
-      - 5555:5555
-    networks:
-      - backend
-    depends_on:
-      - db
 
 networks:
   backend:
