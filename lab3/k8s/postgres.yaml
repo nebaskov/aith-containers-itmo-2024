@@ -10,19 +10,6 @@ data:
 ---
 
 apiVersion: v1
-kind: Secret
-metadata:
-  name: postgres-secret
-  labels:
-    app: postgres
-type: Opaque
-stringData:
-  POSTGRES_USER: "postgres"
-  POSTGRES_PASSWORD: "1q2w3e4r"
-
----
-
-apiVersion: v1
 kind: Service
 metadata:
   name: postgres-service
@@ -69,3 +56,10 @@ spec:
                 name: postgres-configmap
             - secretRef:
                 name: postgres-secret
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresdata
+      volumes:
+        - name: postgresdata
+          persistentVolumeClaim:
+            claimName: postgres-volume-claim
