@@ -20,6 +20,8 @@ kubectl create -f nextcloud.yaml
 ```
 для удобства повторного запуска вместо expose deployment написал service в манифесте некстклауда
 
+так же для удобства есть [скрипт](start.sh), создающий ресурсы в нужном порядке
+
 пруфы работоспособности манифестов
 
 Скриншот веб-интерфейса некстклауда
@@ -42,5 +44,4 @@ kubectl create -f nextcloud.yaml
 БД сбросится, под postgres эфемерный. Из-за этого некстклауд перестанет подниматься, потому что при сбросе бд сгинули все его данные
 
 Для решения данной проблемы было решено создать PersistantVolume для постгреса.
-- postgres-pv.yaml: манифест PersistantVolume
-- postgres-pvc.yaml: манифест PersistantVolumeClaim для вольюма
+- postgres-pv.yaml: манифест PersistentVolume и PersistentVolumeClaim

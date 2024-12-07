@@ -104,5 +104,25 @@ spec:
                   name: nextcloud-secret
                   key: NEXTCLOUD_ADMIN_PASSWORD
           imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+              - echo
+              - ok
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            exec:
+              command:
+              - echo
+              - ok
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
       restartPolicy: Always
       dnsPolicy: ClusterFirst
