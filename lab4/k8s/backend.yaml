@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-cmp
+data:
+  MINIO_URL: "http://s3:9000"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8000
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: aichem-chat
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 250m
+            memory: 250Mi
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        env:
+          - name: GOOGLE_AI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: backend-secret
+                key: GOOGLE_AI_API_KEY
+          - name: MINIO_URL
+            valueFrom:
+              configMapKeyRef:
+                key: MINIO_URL
+                name: backend-cmp
+        imagePullPolicy: Never
+        livenessProbe:
+            exec:
+              command:
+              - echo
+              - ok
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+        readinessProbe:
+          exec:
+            command:
+            - echo
+            - ok
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst

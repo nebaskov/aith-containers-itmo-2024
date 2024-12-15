@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-configmap
+data:
+  MINIO_STORAGE_USE_HTTPS: "false"
+  MINIO_URL: "http://s3:9001"
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: s3-pv
+  labels:
+    type: local
+    app: s3
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath: 
+    path: /data
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-pvc
+  labels:
+    app: s3
+spec:
+  resources:
+    requests:
+      storage: 500Mi
+  accessModes:
+    - ReadWriteMany
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-svc
+spec:
+  selector:
+    app: s3
+  ports:
+  - port: 9001
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3
+spec:
+  selector:
+    matchLabels:
+      app: s3
+  template:
+    metadata:
+      labels:
+        app: s3
+    spec:
+      containers:
+        - name: s3
+          image: quay.io/minio/minio
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - minio server /data --console-address :9001
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ROOT_USER
+                  name: s3-secret
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ROOT_PASSWORD
+                  name: s3-secret
+          livenessProbe:
+            exec:
+             command:
+              - curl
+              - -I
+              - ${MINIO_URL}/minio/health/live
+      initContainers:
+        - name: s3-init
+          image: minio-starter
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          imagePullPolicy: Never
+          env:
+            - name: MINIO_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: s3-configmap
+                  key: MINIO_URL
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ROOT_USER
+                  name: s3-secret
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ROOT_PASSWORD
+                  name: s3-secret
+
+      volumes:
+        - name: s3-data
+          persistentVolumeClaim:
+            claimName: s3-pvc
